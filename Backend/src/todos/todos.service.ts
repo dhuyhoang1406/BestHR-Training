@@ -1,15 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
+import { Category } from '../entities/category.entity';    
+import { User } from '../entities/user.entity';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { GetTodosQueryDto } from './dto/get-todos.dto';
-import { Todo, TodoStatus } from './entities/todo.entity';
+import { Todo, TodoStatus } from '../entities/todo.entity';
 
 @Injectable()
 export class TodosService {
   constructor(
     @InjectRepository(Todo)
     private readonly todoRepository: Repository<Todo>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async findAllPaginated(query: GetTodosQueryDto) {
@@ -17,9 +20,10 @@ export class TodosService {
     const page = query.page ?? 1;
     const isArchived = query.isArchived === true;
 
-    // QueryBuilder avoids TypeORM soft-delete + findAndCount edge cases
     const qb = this.todoRepository
       .createQueryBuilder('todo')
+      .leftJoinAndSelect('todo.categories', 'category')
+      .leftJoinAndSelect('todo.user', 'user')
       .withDeleted()
       .orderBy('todo.createdAt', 'DESC')
       .take(limit)
@@ -44,9 +48,46 @@ export class TodosService {
     };
   }
 
-  async create(dto: CreateTodoDto) {
-    const todo = this.todoRepository.create(dto);
-    return this.todoRepository.save(todo);
+  async createWithCategories(dto: CreateTodoDto): Promise<Todo> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const todoRepo = queryRunner.manager.getRepository(Todo);
+      const categoryRepo = queryRunner.manager.getRepository(Category);
+      const userRepo = queryRunner.manager.getRepository(User);
+
+      const user = await userRepo.findOneBy({ id: dto.userId });
+      if (!user) {
+        throw new NotFoundException(`User ${dto.userId} not found`);
+      }
+
+      let categories: Category[] = [];
+      if (dto.categoryIds?.length) {
+        categories = await categoryRepo.findBy({ id: In(dto.categoryIds) });
+        if (categories.length !== dto.categoryIds.length) {
+          throw new NotFoundException('One or more categories do not exist');
+        }
+      }
+
+      const todo = todoRepo.create({
+        title: dto.title,
+        description: dto.description ?? null,
+        status: TodoStatus.PENDING,
+        userId: dto.userId,
+        categories,
+      });
+
+      const saved = await todoRepo.save(todo);
+      await queryRunner.commitTransaction();
+      return saved;
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async changeStatus(id: string, status: TodoStatus) {
@@ -57,7 +98,8 @@ export class TodosService {
 
   async softDelete(id: string) {
     const todo = await this.findOneOrFail(id);
-    return this.todoRepository.softRemove(todo);
+    await this.todoRepository.softDelete(id);
+    return this.findOneOrFail(id, true);
   }
 
   async restore(id: string) {
@@ -65,7 +107,8 @@ export class TodosService {
     if (!todo.deletedAt) {
       return todo;
     }
-    return this.todoRepository.recover(todo);
+    await this.todoRepository.restore(id);
+    return this.findOneOrFail(id);
   }
 
   async removeMany(ids: string[]): Promise<void> {
@@ -76,6 +119,7 @@ export class TodosService {
     const todo = await this.todoRepository.findOne({
       where: { id },
       withDeleted,
+      relations: { categories: true, user: true },
     });
     if (!todo) {
       throw new NotFoundException(`Todo with id "${id}" not found`);

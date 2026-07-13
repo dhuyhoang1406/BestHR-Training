@@ -1,10 +1,26 @@
+'use client';
+
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
+import { fetchUsers } from '@/lib/api';
 
 export function AppNav() {
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: fetchUsers,
+  });
+
+  const firstUserId = users[0]?.id;
+
   return (
     <nav style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
       <Link href="/">Active</Link>
       <Link href="/?isArchived=true">Archive</Link>
+      {firstUserId ? (
+        <Link href={`/users/${firstUserId}`}>User todos</Link>
+      ) : (
+        <span style={{ color: '#999' }}>User todos</span>
+      )}
     </nav>
   );
 }

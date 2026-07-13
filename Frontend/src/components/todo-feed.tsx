@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import {
-  keepPreviousData,
   useMutation,
   useQuery,
   useQueryClient,
@@ -14,53 +13,49 @@ import {
   restoreTodo,
   updateTodoStatus,
 } from '@/lib/api';
-import type { PaginatedTodosResponse, TodoStatus } from '@/lib/types';
+import { refreshTodoQueries } from '@/lib/query';
+import type { TodoStatus } from '@/lib/types';
 import { BulkActionBar } from './bulk-action-bar';
+import { CategoryBadges } from './category-badges';
 
 const STATUSES: TodoStatus[] = ['PENDING', 'IN_PROGRESS', 'DONE'];
 const LIMIT = 5;
 
 interface TodoFeedProps {
-  initialData?: PaginatedTodosResponse;
   isArchived?: boolean;
 }
 
-export function TodoFeed({
-  initialData,
-  isArchived = false,
-}: TodoFeedProps) {
+export function TodoFeed({ isArchived = false }: TodoFeedProps) {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  const { data, isLoading, isError, error, isPlaceholderData } = useQuery({
+  const { data, isLoading, isError, error, isFetching } = useQuery({
     queryKey: ['todos', { page, limit: LIMIT, isArchived }],
     queryFn: () => fetchTodos(page, LIMIT, isArchived),
-    placeholderData: keepPreviousData,
-    initialData: page === 1 ? initialData : undefined,
   });
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: TodoStatus }) =>
       updateTodoStatus(id, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['todos'] });
+    onSuccess: async () => {
+      await refreshTodoQueries(queryClient);
     },
   });
 
   const archiveMutation = useMutation({
     mutationFn: (id: string) => archiveTodo(id),
-    onSuccess: (_data, id) => {
+    onSuccess: async (_data, id) => {
       setSelectedIds((prev) => prev.filter((x) => x !== id));
-      queryClient.invalidateQueries({ queryKey: ['todos'] });
+      await refreshTodoQueries(queryClient);
     },
   });
 
   const restoreMutation = useMutation({
     mutationFn: (id: string) => restoreTodo(id),
-    onSuccess: (_data, id) => {
+    onSuccess: async (_data, id) => {
       setSelectedIds((prev) => prev.filter((x) => x !== id));
-      queryClient.invalidateQueries({ queryKey: ['todos'] });
+      await refreshTodoQueries(queryClient);
     },
   });
 
@@ -114,7 +109,7 @@ export function TodoFeed({
           listStyle: 'none',
           padding: 0,
           margin: 0,
-          opacity: isPlaceholderData ? 0.5 : 1,
+          opacity: isFetching ? 0.6 : 1,
         }}
       >
         {todos.map((todo) => (
@@ -149,11 +144,20 @@ export function TodoFeed({
                 </div>
               )}
               <div style={{ fontSize: 12, color: '#777', marginTop: 4 }}>
+                {todo.user ? (
+                  <>
+                    <Link href={`/users/${todo.userId}`}>
+                      {todo.user.displayName}
+                    </Link>
+                    {' · '}
+                  </>
+                ) : null}
                 {new Date(todo.createdAt).toLocaleString()}
                 {todo.deletedAt && (
                   <> · archived {new Date(todo.deletedAt).toLocaleString()}</>
                 )}
               </div>
+              <CategoryBadges categories={todo.categories} />
             </div>
 
             <select
@@ -214,18 +218,18 @@ export function TodoFeed({
             <button
               type="button"
               onClick={() => setPage((p) => Math.max(p - 1, 1))}
-              disabled={page <= 1 || isPlaceholderData}
+              disabled={page <= 1 || isFetching}
             >
               Previous
             </button>
             <button
               type="button"
               onClick={() => {
-                if (!isPlaceholderData && page < meta.totalPages) {
+                if (!isFetching && page < meta.totalPages) {
                   setPage((p) => p + 1);
                 }
               }}
-              disabled={page >= meta.totalPages || isPlaceholderData}
+              disabled={page >= meta.totalPages || isFetching}
             >
               Next
             </button>

@@ -14,7 +14,6 @@ import { BulkIdsDto } from './dto/bulk-ids.dto';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { GetTodosQueryDto } from './dto/get-todos.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
-import { TodoStatus } from './entities/todo.entity';
 import { TodosService } from './todos.service';
 
 @Controller('todos')
@@ -27,11 +26,10 @@ export class TodosController {
   }
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   create(@Body() dto: CreateTodoDto) {
-    dto.status = TodoStatus.PENDING;
-    return this.todosService.create(dto);
+    return this.todosService.createWithCategories(dto);
   }
-
 
   @Post('bulk-delete')
   @HttpCode(HttpStatus.NO_CONTENT)

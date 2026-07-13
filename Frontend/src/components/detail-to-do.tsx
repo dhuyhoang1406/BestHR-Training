@@ -9,7 +9,9 @@ import {
   restoreTodo,
   updateTodoStatus,
 } from '@/lib/api';
+import { refreshTodoQueries } from '@/lib/query';
 import type { TodoStatus } from '@/lib/types';
+import { CategoryBadges } from './category-badges';
 
 const STATUSES: TodoStatus[] = ['PENDING', 'IN_PROGRESS', 'DONE'];
 
@@ -27,25 +29,23 @@ export function DetailToDo() {
 
   const statusMutation = useMutation({
     mutationFn: (status: TodoStatus) => updateTodoStatus(id, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['todo', id] });
-      queryClient.invalidateQueries({ queryKey: ['todos'] });
+    onSuccess: async () => {
+      await refreshTodoQueries(queryClient);
     },
   });
 
   const archiveMutation = useMutation({
     mutationFn: () => archiveTodo(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['todos'] });
+    onSuccess: async () => {
+      await refreshTodoQueries(queryClient);
       router.push('/?isArchived=true');
     },
   });
 
   const restoreMutation = useMutation({
     mutationFn: () => restoreTodo(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['todo', id] });
-      queryClient.invalidateQueries({ queryKey: ['todos'] });
+    onSuccess: async () => {
+      await refreshTodoQueries(queryClient);
       router.push('/');
     },
   });
@@ -65,12 +65,26 @@ export function DetailToDo() {
       </p>
 
       <h1 style={{ marginTop: 0 }}>{todo.title}</h1>
+      <CategoryBadges categories={todo.categories} />
 
-      <dl style={{ lineHeight: 1.8 }}>
+      <dl style={{ lineHeight: 1.8, marginTop: 16 }}>
         <dt>
           <strong>ID</strong>
         </dt>
         <dd style={{ margin: '0 0 12px', fontFamily: 'monospace' }}>{todo.id}</dd>
+
+        <dt>
+          <strong>Owner</strong>
+        </dt>
+        <dd style={{ margin: '0 0 12px' }}>
+          {todo.user ? (
+            <Link href={`/users/${todo.userId}`}>
+              {todo.user.displayName} ({todo.user.email})
+            </Link>
+          ) : (
+            todo.userId
+          )}
+        </dd>
 
         <dt>
           <strong>Description</strong>

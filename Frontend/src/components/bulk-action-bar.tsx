@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { bulkDeleteTodos } from '@/lib/api';
+import { refreshTodoQueries } from '@/lib/query';
 
 interface BulkActionBarProps {
   selectedIds: string[];
@@ -16,9 +17,9 @@ export function BulkActionBar({
 
   const { mutate, isPending } = useMutation({
     mutationFn: bulkDeleteTodos,
-    onSuccess: () => {
+    onSuccess: async () => {
       onClearSelection();
-      queryClient.invalidateQueries({ queryKey: ['todos'] });
+      await refreshTodoQueries(queryClient);
     },
     onError: (error) => {
       console.error(error);

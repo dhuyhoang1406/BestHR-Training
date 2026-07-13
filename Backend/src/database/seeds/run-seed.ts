@@ -1,7 +1,9 @@
 import 'reflect-metadata';
 import { config as loadEnv } from 'dotenv';
 import { DataSource } from 'typeorm';
-import { Todo } from '../todos/entities/todo.entity';
+import { Category } from '../../entities/category.entity';
+import { Todo } from '../../entities/todo.entity';
+import { User } from '../../entities/user.entity';
 import { seedTodos } from './todos.seed';
 
 loadEnv();
@@ -14,8 +16,8 @@ async function run() {
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    entities: [Todo],
-    synchronize: process.env.DB_SYNC === 'true',
+    entities: [User, Category, Todo],
+    synchronize: false,
   });
 
   await dataSource.initialize();

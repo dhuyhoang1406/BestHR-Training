@@ -16,7 +16,7 @@ App runs at http://localhost:3000
 
 - Offset pagination (`GET /todos?limit=&page=&isArchived=`)
 - Active list `/` and Archive list `/?isArchived=true`
-- Detail `/todos/[id]` (`GET /todos/:id`)
-- Update status (`PATCH /todos/:id/status`)
-- Archive / soft-delete (`PATCH /todos/:id/archive`)
-- Bulk hard-delete (`POST /todos/bulk-delete`)
+- Create todo with Zod + react-hook-form (`POST /todos` + `userId` / `categoryIds`)
+- Detail `/todos/[id]`
+- User todos `/users/[id]` (`GET /users/:id/todos` with categories)
+- Update status / archive / restore / bulk delete
