@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import {
   keepPreviousData,
@@ -7,7 +8,12 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { archiveTodo, fetchTodos, updateTodoStatus } from '@/lib/api';
+import {
+  archiveTodo,
+  fetchTodos,
+  restoreTodo,
+  updateTodoStatus,
+} from '@/lib/api';
 import type { PaginatedTodosResponse, TodoStatus } from '@/lib/types';
 import { BulkActionBar } from './bulk-action-bar';
 
@@ -16,16 +22,20 @@ const LIMIT = 5;
 
 interface TodoFeedProps {
   initialData?: PaginatedTodosResponse;
+  isArchived?: boolean;
 }
 
-export function TodoFeed({ initialData }: TodoFeedProps) {
+export function TodoFeed({
+  initialData,
+  isArchived = false,
+}: TodoFeedProps) {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const { data, isLoading, isError, error, isPlaceholderData } = useQuery({
-    queryKey: ['todos', { page, limit: LIMIT }],
-    queryFn: () => fetchTodos(page, LIMIT),
+    queryKey: ['todos', { page, limit: LIMIT, isArchived }],
+    queryFn: () => fetchTodos(page, LIMIT, isArchived),
     placeholderData: keepPreviousData,
     initialData: page === 1 ? initialData : undefined,
   });
@@ -40,6 +50,14 @@ export function TodoFeed({ initialData }: TodoFeedProps) {
 
   const archiveMutation = useMutation({
     mutationFn: (id: string) => archiveTodo(id),
+    onSuccess: (_data, id) => {
+      setSelectedIds((prev) => prev.filter((x) => x !== id));
+      queryClient.invalidateQueries({ queryKey: ['todos'] });
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: (id: string) => restoreTodo(id),
     onSuccess: (_data, id) => {
       setSelectedIds((prev) => prev.filter((x) => x !== id));
       queryClient.invalidateQueries({ queryKey: ['todos'] });
@@ -75,7 +93,9 @@ export function TodoFeed({ initialData }: TodoFeedProps) {
           marginBottom: 12,
         }}
       >
-        <h2 style={{ margin: 0 }}>Todos</h2>
+        <h2 style={{ margin: 0 }}>
+          {isArchived ? 'Archived todos' : 'Todos'}
+        </h2>
         <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <input
             type="checkbox"
@@ -117,7 +137,12 @@ export function TodoFeed({ initialData }: TodoFeedProps) {
             />
 
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600 }}>{todo.title}</div>
+              <Link
+                href={`/todos/${todo.id}`}
+                style={{ fontWeight: 600, color: 'inherit' }}
+              >
+                {todo.title}
+              </Link>
               {todo.description && (
                 <div style={{ color: '#555', fontSize: 14 }}>
                   {todo.description}
@@ -125,6 +150,9 @@ export function TodoFeed({ initialData }: TodoFeedProps) {
               )}
               <div style={{ fontSize: 12, color: '#777', marginTop: 4 }}>
                 {new Date(todo.createdAt).toLocaleString()}
+                {todo.deletedAt && (
+                  <> · archived {new Date(todo.deletedAt).toLocaleString()}</>
+                )}
               </div>
             </div>
 
@@ -145,13 +173,23 @@ export function TodoFeed({ initialData }: TodoFeedProps) {
               ))}
             </select>
 
-            <button
-              type="button"
-              disabled={archiveMutation.isPending}
-              onClick={() => archiveMutation.mutate(todo.id)}
-            >
-              Archive
-            </button>
+            {isArchived ? (
+              <button
+                type="button"
+                disabled={restoreMutation.isPending}
+                onClick={() => restoreMutation.mutate(todo.id)}
+              >
+                Restore
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={archiveMutation.isPending}
+                onClick={() => archiveMutation.mutate(todo.id)}
+              >
+                Archive
+              </button>
+            )}
           </li>
         ))}
       </ul>

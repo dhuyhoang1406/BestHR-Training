@@ -23,12 +23,25 @@ async function handleResponse<T>(res: Response): Promise<T> {
 export async function fetchTodos(
   page: number,
   limit: number,
+  isArchived = false,
 ): Promise<PaginatedTodosResponse> {
-  const res = await fetch(
-    `${API_URL}/todos?limit=${limit}&page=${page}`,
-    { cache: 'no-store' },
-  );
+  const params = new URLSearchParams({
+    limit: String(limit),
+    page: String(page),
+  });
+  // Only send when true — avoids NestJS Boolean("false") === true pitfall
+  if (isArchived) {
+    params.set('isArchived', 'true');
+  }
+  const res = await fetch(`${API_URL}/todos?${params}`, {
+    cache: 'no-store',
+  });
   return handleResponse<PaginatedTodosResponse>(res);
+}
+
+export async function fetchTodoById(id: string): Promise<Todo> {
+  const res = await fetch(`${API_URL}/todos/${id}`, { cache: 'no-store' });
+  return handleResponse<Todo>(res);
 }
 
 export async function createTodo(payload: CreateTodoPayload): Promise<Todo> {
@@ -54,6 +67,13 @@ export async function updateTodoStatus(
 
 export async function archiveTodo(id: string): Promise<Todo> {
   const res = await fetch(`${API_URL}/todos/${id}/archive`, {
+    method: 'PATCH',
+  });
+  return handleResponse<Todo>(res);
+}
+
+export async function restoreTodo(id: string): Promise<Todo> {
+  const res = await fetch(`${API_URL}/todos/${id}/restore`, {
     method: 'PATCH',
   });
   return handleResponse<Todo>(res);

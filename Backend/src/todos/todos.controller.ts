@@ -14,8 +14,8 @@ import { BulkIdsDto } from './dto/bulk-ids.dto';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { GetTodosQueryDto } from './dto/get-todos.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
-import { TodosService } from './todos.service';
 import { TodoStatus } from './entities/todo.entity';
+import { TodosService } from './todos.service';
 
 @Controller('todos')
 export class TodosController {
@@ -32,10 +32,16 @@ export class TodosController {
     return this.todosService.create(dto);
   }
 
+
   @Post('bulk-delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   async bulkDelete(@Body() dto: BulkIdsDto): Promise<void> {
     await this.todosService.removeMany(dto.ids);
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.todosService.findOneOrFail(id, true);
   }
 
   @Patch(':id/status')
@@ -49,5 +55,10 @@ export class TodosController {
   @Patch(':id/archive')
   archive(@Param('id', ParseUUIDPipe) id: string) {
     return this.todosService.softDelete(id);
+  }
+
+  @Patch(':id/restore')
+  restore(@Param('id', ParseUUIDPipe) id: string) {
+    return this.todosService.restore(id);
   }
 }

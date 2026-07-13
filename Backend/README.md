@@ -15,10 +15,13 @@ npm run start:dev
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/todos?limit=5&page=1` | Offset-paginated todos (excludes archived) |
+| GET | `/todos?limit=5&page=1` | Offset-paginated active todos |
+| GET | `/todos?isArchived=true&limit=5&page=1` | Offset-paginated archived todos |
+| GET | `/todos/:id` | Todo detail (includes archived) |
 | POST | `/todos` | Create a todo |
 | PATCH | `/todos/:id/status` | Update status (`PENDING` \| `IN_PROGRESS` \| `DONE`) |
 | PATCH | `/todos/:id/archive` | Soft-delete (sets `deletedAt`) |
+| PATCH | `/todos/:id/restore` | Restore an archived todo |
 | POST | `/todos/bulk-delete` | Hard-delete many todos by ids (`204`) |
 
 ### Seed sample data

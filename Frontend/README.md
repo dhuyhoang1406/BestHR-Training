@@ -14,8 +14,9 @@ App runs at http://localhost:3000
 
 ## Features
 
-- Offset pagination (`GET /todos?limit=&page=`)
-- Create todo (`POST /todos`)
+- Offset pagination (`GET /todos?limit=&page=&isArchived=`)
+- Active list `/` and Archive list `/?isArchived=true`
+- Detail `/todos/[id]` (`GET /todos/:id`)
 - Update status (`PATCH /todos/:id/status`)
 - Archive / soft-delete (`PATCH /todos/:id/archive`)
 - Bulk hard-delete (`POST /todos/bulk-delete`)
