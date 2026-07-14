@@ -1,3 +1,4 @@
+import axios, { isAxiosError } from 'axios';
 import type {
   Category,
   CreateTodoPayload,
@@ -30,27 +31,29 @@ export class ApiError extends Error {
   }
 }
 
-async function handleResponse<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    let body: unknown = null;
-    try {
-      body = await res.json();
-    } catch {
-      body = await res.text().catch(() => null);
-    }
-    throw new ApiError(res.status, body);
-  }
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-  if (res.status === 204) {
-    return undefined as T;
+function toApiError(error: unknown): never {
+  if (isAxiosError(error)) {
+    const status = error.response?.status ?? 0;
+    const body = error.response?.data ?? error.message;
+    throw new ApiError(status, body);
   }
+  throw error;
+}
 
-  const text = await res.text();
-  if (!text) {
-    return undefined as T;
+async function request<T>(fn: () => Promise<{ data: T }>): Promise<T> {
+  try {
+    const { data } = await fn();
+    return data;
+  } catch (error) {
+    toApiError(error);
   }
-
-  return JSON.parse(text) as T;
 }
 
 export async function fetchTodos(
@@ -58,88 +61,61 @@ export async function fetchTodos(
   limit: number,
   isArchived = false,
 ): Promise<PaginatedTodosResponse> {
-  const params = new URLSearchParams({
-    limit: String(limit),
-    page: String(page),
-  });
-  if (isArchived) {
-    params.set('isArchived', 'true');
-  }
-  const res = await fetch(`${API_URL}/todos?${params}`, {
-    cache: 'no-store',
-  });
-  return handleResponse<PaginatedTodosResponse>(res);
+  return request(() =>
+    api.get<PaginatedTodosResponse>('/todos', {
+      params: {
+        limit,
+        page,
+        ...(isArchived ? { isArchived: true } : {}),
+      },
+    }),
+  );
 }
 
 export async function fetchTodoById(id: string): Promise<Todo> {
-  const res = await fetch(`${API_URL}/todos/${id}`, { cache: 'no-store' });
-  return handleResponse<Todo>(res);
+  return request(() => api.get<Todo>(`/todos/${id}`));
 }
 
 export async function fetchUsers(): Promise<User[]> {
-  const res = await fetch(`${API_URL}/users`, { cache: 'no-store' });
-  return handleResponse<User[]>(res);
+  return request(() => api.get<User[]>('/users'));
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-  const res = await fetch(`${API_URL}/categories`, { cache: 'no-store' });
-  return handleResponse<Category[]>(res);
+  return request(() => api.get<Category[]>('/categories'));
 }
 
 export async function fetchUserTodos(
   userId: string,
   status?: TodoStatus,
 ): Promise<Todo[]> {
-  const params = new URLSearchParams();
-  if (status) params.set('status', status);
-  const qs = params.toString();
-  const res = await fetch(
-    `${API_URL}/users/${userId}/todos${qs ? `?${qs}` : ''}`,
-    { cache: 'no-store' },
+  return request(() =>
+    api.get<Todo[]>(`/users/${userId}/todos`, {
+      params: status ? { status } : undefined,
+    }),
   );
-  return handleResponse<Todo[]>(res);
 }
 
 export async function createTodo(payload: CreateTodoPayload): Promise<Todo> {
-  const res = await fetch(`${API_URL}/todos`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  return handleResponse<Todo>(res);
+  return request(() => api.post<Todo>('/todos', payload));
 }
 
 export async function updateTodoStatus(
   id: string,
   status: TodoStatus,
 ): Promise<Todo> {
-  const res = await fetch(`${API_URL}/todos/${id}/status`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status }),
-  });
-  return handleResponse<Todo>(res);
+  return request(() =>
+    api.patch<Todo>(`/todos/${id}/status`, { status }),
+  );
 }
 
 export async function archiveTodo(id: string): Promise<Todo> {
-  const res = await fetch(`${API_URL}/todos/${id}/archive`, {
-    method: 'PATCH',
-  });
-  return handleResponse<Todo>(res);
+  return request(() => api.patch<Todo>(`/todos/${id}/archive`));
 }
 
 export async function restoreTodo(id: string): Promise<Todo> {
-  const res = await fetch(`${API_URL}/todos/${id}/restore`, {
-    method: 'PATCH',
-  });
-  return handleResponse<Todo>(res);
+  return request(() => api.patch<Todo>(`/todos/${id}/restore`));
 }
 
 export async function bulkDeleteTodos(ids: string[]): Promise<void> {
-  const res = await fetch(`${API_URL}/todos/bulk-delete`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ids }),
-  });
-  return handleResponse<void>(res);
+  return request(() => api.post<void>('/todos/bulk-delete', { ids }));
 }

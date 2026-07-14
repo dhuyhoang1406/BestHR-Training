@@ -1,6 +1,5 @@
 import {
   Column,
-  DeleteDateColumn,
   Entity,
   JoinColumn,
   JoinTable,
@@ -48,5 +47,4 @@ export class Todo extends BaseEntity {
     inverseJoinColumn: { name: 'category_id', referencedColumnName: 'id' },
   })
   categories: Category[];
-
 }
