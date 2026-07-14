@@ -25,6 +25,11 @@ export class TodosController {
     return this.todosService.findAllPaginated(query);
   }
 
+  @Get('archived')
+  findAllArchived(@Query() query: GetTodosQueryDto) {
+    return this.todosService.findAllArchivedPaginated(query);
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Body() dto: CreateTodoDto) {

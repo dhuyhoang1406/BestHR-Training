@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { AppNav } from '@/components/app-nav';
 import { Providers } from '@/components/providers';
 import './globals.css';
 
@@ -15,7 +16,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          <main style={{ maxWidth: 800, margin: '0 auto', padding: 24 }}>
+            <AppNav />
+            {children}
+          </main>
+        </Providers>
       </body>
     </html>
   );

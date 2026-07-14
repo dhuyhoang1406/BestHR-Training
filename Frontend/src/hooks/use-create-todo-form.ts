@@ -1,17 +1,15 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ApiError } from '@/lib/api';
+import { ApiError } from '@/lib/api-error';
 import {
   createTodoSchema,
   type CreateTodoInput,
 } from '@/lib/schemas/todo.schema';
-import { useCategories } from './use-categories';
-import { useCreateTodo } from './use-todo-mutations';
-import { useUsers } from './use-users';
+import { useCreateTodo } from './mutations';
+import { useCategories } from './queries';
 
-export function useCreateTodoForm() {
-  const { data: users = [] } = useUsers();
+export function useCreateTodoForm(userId: string) {
   const { data: categories = [] } = useCategories();
 
   const form = useForm<CreateTodoInput>({
@@ -20,7 +18,7 @@ export function useCreateTodoForm() {
     defaultValues: {
       title: '',
       description: '',
-      userId: '',
+      userId,
       categoryIds: [],
     },
   });
@@ -38,17 +36,15 @@ export function useCreateTodoForm() {
   const selectedCategoryIds = watch('categoryIds') ?? [];
 
   useEffect(() => {
-    if (users.length > 0) {
-      setValue('userId', users[0].id, { shouldValidate: false });
-    }
-  }, [users, setValue]);
+    setValue('userId', userId, { shouldValidate: false });
+  }, [userId, setValue]);
 
   const createMutation = useCreateTodo({
     onSuccess: async () => {
       reset({
         title: '',
         description: '',
-        userId: users[0]?.id ?? '',
+        userId,
         categoryIds: [],
       });
     },
@@ -89,7 +85,6 @@ export function useCreateTodoForm() {
   }
 
   return {
-    users,
     categories,
     register,
     errors,

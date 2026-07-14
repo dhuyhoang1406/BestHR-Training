@@ -6,8 +6,8 @@ import {
   useArchiveTodo,
   useRestoreTodo,
   useUpdateTodoStatus,
-} from './use-todo-mutations';
-import { useTodos } from './use-todos';
+} from './mutations';
+import { useTodos } from './queries';
 import { SEARCH_DEBOUNCE_MS } from './constants';
 
 export function useTodoFeed(isArchived = false) {

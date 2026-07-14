@@ -27,7 +27,7 @@ npm run migration:revert
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/todos?limit=5&page=1` | Offset-paginated active todos (+ user, categories) |
-| GET | `/todos?isArchived=true&limit=5&page=1` | Offset-paginated archived todos |
+| GET | `/todos/archived?limit=5&page=1` | Offset-paginated archived todos |
 | GET | `/todos/:id` | Todo detail (includes archived) |
 | POST | `/todos` | Create todo + categories in one transaction (`201`) |
 | PATCH | `/todos/:id/status` | Update status (`PENDING` \| `IN_PROGRESS` \| `DONE`) |

@@ -5,6 +5,7 @@ const BACKEND =
 export const API_ROUTES = {
   // ── Todos ────────────────────────────────────────────────────────────────
   TODOS: `${BACKEND}/todos`,
+  TODOS_ARCHIVED: `${BACKEND}/todos/archived`,
   TODO_BY_ID: (id: string) => `${BACKEND}/todos/${id}`,
   TODO_STATUS: (id: string) => `${BACKEND}/todos/${id}/status`,
   TODO_ARCHIVE: (id: string) => `${BACKEND}/todos/${id}/archive`,

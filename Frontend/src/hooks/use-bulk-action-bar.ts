@@ -1,4 +1,4 @@
-import { useBulkDeleteTodos } from './use-todo-mutations';
+import { useBulkDeleteTodos } from './mutations';
 
 export function useBulkActionBar(
   selectedIds: string[],

@@ -6,6 +6,7 @@ import { useTodoFeed } from '@/hooks/use-todo-feed';
 import type { TodoStatus } from '@/lib/types';
 import { BulkActionBar } from './bulk-action-bar';
 import { CategoryBadges } from './category-badges';
+import { UserLink } from './user-link';
 
 interface TodoFeedProps {
   isArchived?: boolean;
@@ -121,9 +122,9 @@ export function TodoFeed({ isArchived = false }: TodoFeedProps) {
                   <div style={{ fontSize: 12, color: '#777', marginTop: 4 }}>
                     {todo.user ? (
                       <>
-                        <Link href={`/users/${todo.userId}`}>
+                        <UserLink userId={todo.userId}>
                           {todo.user.displayName}
-                        </Link>
+                        </UserLink>
                         {' · '}
                       </>
                     ) : null}

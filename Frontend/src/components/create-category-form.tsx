@@ -32,8 +32,6 @@ export function CreateCategoryForm() {
         border: '1px solid #ccc',
       }}
     >
-      <h2 style={{ marginTop: 0 }}>Create category</h2>
-
       <div style={{ marginBottom: 12 }}>
         <label style={{ display: 'block', marginBottom: 4 }}>Name</label>
         <input

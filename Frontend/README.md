@@ -14,7 +14,7 @@ App runs at http://localhost:3000
 
 ## Features
 
-- Offset pagination (`GET /todos?limit=&page=&isArchived=`)
+- Offset pagination (`GET /todos` and `GET /todos/archived`)
 - Active list `/` and Archive list `/?isArchived=true`
 - Create todo with Zod + react-hook-form (`POST /todos` + `userId` / `categoryIds`)
 - Detail `/todos/[id]`

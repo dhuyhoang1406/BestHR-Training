@@ -1,13 +1,21 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createCategory } from '@/services/categories.service';
 import {
   archiveTodo,
   bulkDeleteTodos,
   createTodo,
   restoreTodo,
   updateTodoStatus,
-} from '@/lib/api';
+} from '@/services/todos.service';
 import { refreshTodoQueries } from '@/lib/query';
-import type { CreateTodoPayload, TodoStatus } from '@/lib/types';
+import type {
+  CreateCategoryPayload,
+  CreateTodoPayload,
+  TodoStatus,
+} from '@/lib/types';
+import { queryKeys } from './query-keys';
+
+// ── Todos ──────────────────────────────────────────────────────────────────
 
 export function useUpdateTodoStatus() {
   const queryClient = useQueryClient();
@@ -75,6 +83,24 @@ export function useBulkDeleteTodos(options?: {
     mutationFn: bulkDeleteTodos,
     onSuccess: async () => {
       await refreshTodoQueries(queryClient);
+      await options?.onSuccess?.();
+    },
+    onError: options?.onError,
+  });
+}
+
+// ── Categories ─────────────────────────────────────────────────────────────
+
+export function useCreateCategory(options?: {
+  onSuccess?: () => void | Promise<void>;
+  onError?: (error: unknown) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateCategoryPayload) => createCategory(payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.categories });
       await options?.onSuccess?.();
     },
     onError: options?.onError,

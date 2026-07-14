@@ -5,6 +5,13 @@ import { User } from '../../entities/user.entity';
 
 const SAMPLE_COUNT = 24;
 
+const USER_SEEDS = [
+  { email: 'demo@besthr.local', displayName: 'Demo User' },
+  { email: 'alice@besthr.local', displayName: 'Alice Nguyen' },
+  { email: 'bob@besthr.local', displayName: 'Bob Tran' },
+  { email: 'carol@besthr.local', displayName: 'Carol Le' },
+];
+
 const CATEGORY_SEEDS = [
   { name: 'Work', color: '#3b82f6' },
   { name: 'Personal', color: '#22c55e' },
@@ -17,18 +24,14 @@ export async function seedTodos(dataSource: DataSource): Promise<number> {
   const categoryRepository = dataSource.getRepository(Category);
   const todoRepository = dataSource.getRepository(Todo);
 
-  let user = await userRepository.findOne({
-    where: { email: 'demo@besthr.local' },
-  });
-
-  if (!user) {
-    user = await userRepository.save(
-      userRepository.create({
-        email: 'demo@besthr.local',
-        displayName: 'Demo User',
-      }),
-    );
-    console.log(`Seeded user ${user.email} (${user.id})`);
+  const users: User[] = [];
+  for (const seed of USER_SEEDS) {
+    let user = await userRepository.findOne({ where: { email: seed.email } });
+    if (!user) {
+      user = await userRepository.save(userRepository.create(seed));
+      console.log(`Seeded user ${user.email} (${user.id})`);
+    }
+    users.push(user);
   }
 
   let categories = await categoryRepository.find();
@@ -56,12 +59,12 @@ export async function seedTodos(dataSource: DataSource): Promise<number> {
           : n % 2 === 0
             ? TodoStatus.IN_PROGRESS
             : TodoStatus.PENDING,
-      userId: user.id,
+      userId: users[index % users.length].id,
       categories: [categories[n % categories.length]],
     });
   });
 
   await todoRepository.save(samples);
-  console.log(`Seeded ${samples.length} todos for user ${user.id}.`);
+  console.log(`Seeded ${samples.length} todos across ${users.length} users.`);
   return samples.length;
 }

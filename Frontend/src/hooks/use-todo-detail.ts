@@ -4,8 +4,8 @@ import {
   useArchiveTodo,
   useRestoreTodo,
   useUpdateTodoStatus,
-} from './use-todo-mutations';
-import { useTodo } from './use-todos';
+} from './mutations';
+import { useTodo } from './queries';
 
 export function useTodoDetail() {
   const params = useParams<{ id: string }>();
@@ -18,7 +18,7 @@ export function useTodoDetail() {
 
   const archiveMutation = useArchiveTodo({
     onSuccess: async () => {
-      router.push('/?isArchived=true');
+      router.push('/archive');
     },
   });
 

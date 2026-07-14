@@ -5,6 +5,7 @@ import { TODO_STATUSES } from '@/hooks/constants';
 import { useTodoDetail } from '@/hooks/use-todo-detail';
 import type { TodoStatus } from '@/lib/types';
 import { CategoryBadges } from './category-badges';
+import { UserLink } from './user-link';
 
 export function DetailToDo() {
   const {
@@ -30,7 +31,7 @@ export function DetailToDo() {
   return (
     <div>
       <p style={{ marginBottom: 16 }}>
-        <Link href={isArchived ? '/?isArchived=true' : '/'}>← Back</Link>
+        <Link href={isArchived ? '/archive' : '/'}>← Back</Link>
       </p>
 
       <h1 style={{ marginTop: 0 }}>{todo.title}</h1>
@@ -47,9 +48,9 @@ export function DetailToDo() {
         </dt>
         <dd style={{ margin: '0 0 12px' }}>
           {todo.user ? (
-            <Link href={`/users/${todo.userId}`}>
+            <UserLink userId={todo.userId}>
               {todo.user.displayName} ({todo.user.email})
-            </Link>
+            </UserLink>
           ) : (
             todo.userId
           )}

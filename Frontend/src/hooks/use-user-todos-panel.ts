@@ -1,11 +1,11 @@
-import { useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import type { TodoStatus } from '@/lib/types';
-import { useUserTodosQuery } from './use-todos';
-import { useUsers } from './use-users';
+import { useUserTodosQuery, useUsers } from './queries';
 
-export function useUserTodosPanel(userId: string) {
-  const router = useRouter();
+export function useUserTodosPanel() {
+  const params = useParams<{ id: string }>();
+  const userId = params.id;
   const [status, setStatus] = useState<TodoStatus | 'ALL'>('ALL');
 
   const { data: users = [] } = useUsers();
@@ -13,15 +13,12 @@ export function useUserTodosPanel(userId: string) {
 
   const user = users.find((u) => u.id === userId);
 
-  function changeUser(nextUserId: string) {
-    router.push(`/users/${nextUserId}`);
-  }
-
   function changeStatus(nextStatus: TodoStatus | 'ALL') {
     setStatus(nextStatus);
   }
 
   return {
+    userId,
     users,
     user,
     todos: query.data,
@@ -29,7 +26,6 @@ export function useUserTodosPanel(userId: string) {
     isLoading: query.isLoading,
     isError: query.isError,
     error: query.error,
-    changeUser,
     changeStatus,
   };
 }

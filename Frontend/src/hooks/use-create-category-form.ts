@@ -1,11 +1,11 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ApiError } from '@/lib/api';
+import { ApiError } from '@/lib/api-error';
 import {
   createCategorySchema,
   type CreateCategoryInput,
 } from '@/lib/schemas/category.schema';
-import { useCreateCategory } from './use-create-category';
+import { useCreateCategory } from './mutations';
 
 const DEFAULT_COLOR = '#3b82f6';
 

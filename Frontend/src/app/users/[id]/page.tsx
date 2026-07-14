@@ -1,18 +1,10 @@
-import { AppNav } from '@/components/app-nav';
-import { UserTodosPanel } from '@/components/user-todos-panel';
+import { UserDetailPanel } from '@/components/user-detail-panel';
 
-type PageProps = {
-  params: Promise<{ id: string }>;
-};
-
-export default async function UserTodosPage({ params }: PageProps) {
-  const { id } = await params;
-
+export default function UserDetailPage() {
   return (
-    <main style={{ maxWidth: 800, margin: '0 auto', padding: 24 }}>
-      <AppNav />
-      <h1>User todos</h1>
-      <UserTodosPanel userId={id} />
-    </main>
+    <>
+      <h1>User</h1>
+      <UserDetailPanel />
+    </>
   );
 }

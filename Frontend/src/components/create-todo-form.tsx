@@ -2,9 +2,12 @@
 
 import { useCreateTodoForm } from '@/hooks/use-create-todo-form';
 
-export function CreateTodoForm() {
+type CreateTodoFormProps = {
+  userId: string;
+};
+
+export function CreateTodoForm({ userId }: CreateTodoFormProps) {
   const {
-    users,
     categories,
     register,
     errors,
@@ -13,7 +16,7 @@ export function CreateTodoForm() {
     selectedCategoryIds,
     toggleCategory,
     submit,
-  } = useCreateTodoForm();
+  } = useCreateTodoForm(userId);
 
   return (
     <form
@@ -24,24 +27,7 @@ export function CreateTodoForm() {
         border: '1px solid #ccc',
       }}
     >
-      <h2 style={{ marginTop: 0 }}>Create todo</h2>
-
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ display: 'block', marginBottom: 4 }}>User</label>
-        <select {...register('userId')} style={{ padding: 8, minWidth: 240 }}>
-          <option value="">Select user</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.displayName} ({u.email})
-            </option>
-          ))}
-        </select>
-        {errors.userId && (
-          <p style={{ color: 'red', margin: '4px 0 0', fontSize: 13 }}>
-            {errors.userId.message}
-          </p>
-        )}
-      </div>
+      <input type="hidden" {...register('userId')} />
 
       <div style={{ marginBottom: 12 }}>
         <label style={{ display: 'block', marginBottom: 4 }}>Title</label>
