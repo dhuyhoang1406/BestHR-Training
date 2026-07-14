@@ -1,40 +1,26 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { fetchUserTodos, fetchUsers } from '@/lib/api';
+import { USER_TODO_STATUSES } from '@/hooks/constants';
+import { useUserTodosPanel } from '@/hooks/use-user-todos-panel';
 import type { TodoStatus } from '@/lib/types';
 import { CategoryBadges } from './category-badges';
 
-const STATUSES: Array<TodoStatus | 'ALL'> = [
-  'ALL',
-  'PENDING',
-  'IN_PROGRESS',
-  'DONE',
-];
-
 export function UserTodosPanel({ userId }: { userId: string }) {
-  const router = useRouter();
-  const [status, setStatus] = useState<TodoStatus | 'ALL'>('ALL');
-
-  const { data: users = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: fetchUsers,
-  });
-
-  const { data: todos, isLoading, isError, error } = useQuery({
-    queryKey: ['user-todos', userId, status],
-    queryFn: () =>
-      fetchUserTodos(userId, status === 'ALL' ? undefined : status),
-    enabled: Boolean(userId),
-  });
+  const {
+    users,
+    user,
+    todos,
+    status,
+    isLoading,
+    isError,
+    error,
+    changeUser,
+    changeStatus,
+  } = useUserTodosPanel(userId);
 
   if (isLoading) return <p>Loading...</p>;
   if (isError) return <p style={{ color: 'red' }}>{(error as Error).message}</p>;
-
-  const user = users.find((u) => u.id === userId);
 
   return (
     <div>
@@ -51,7 +37,7 @@ export function UserTodosPanel({ userId }: { userId: string }) {
           User:{' '}
           <select
             value={userId}
-            onChange={(e) => router.push(`/users/${e.target.value}`)}
+            onChange={(e) => changeUser(e.target.value)}
           >
             {users.map((u) => (
               <option key={u.id} value={u.id}>
@@ -65,9 +51,11 @@ export function UserTodosPanel({ userId }: { userId: string }) {
           Status:{' '}
           <select
             value={status}
-            onChange={(e) => setStatus(e.target.value as TodoStatus | 'ALL')}
+            onChange={(e) =>
+              changeStatus(e.target.value as TodoStatus | 'ALL')
+            }
           >
-            {STATUSES.map((s) => (
+            {USER_TODO_STATUSES.map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>

@@ -1,104 +1,23 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ApiError, createTodo, fetchCategories, fetchUsers } from '@/lib/api';
-import { refreshTodoQueries } from '@/lib/query';
-import {
-  createTodoSchema,
-  type CreateTodoInput,
-} from '@/lib/schemas/todo.schema';
+import { useCreateTodoForm } from '@/hooks/use-create-todo-form';
 
 export function CreateTodoForm() {
-  const queryClient = useQueryClient();
-
-  const { data: users = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: fetchUsers,
-  });
-
-  const { data: categories = [] } = useQuery({
-    queryKey: ['categories'],
-    queryFn: fetchCategories,
-  });
-
   const {
+    users,
+    categories,
     register,
-    handleSubmit,
-    reset,
-    setValue,
-    setError,
-    watch,
-    formState: { errors, isSubmitting },
-  } = useForm<CreateTodoInput>({
-    resolver: zodResolver(createTodoSchema),
-    mode: 'onBlur',
-    defaultValues: {
-      title: '',
-      description: '',
-      userId: '',
-      categoryIds: [],
-    },
-  });
-
-  const selectedCategoryIds = watch('categoryIds') ?? [];
-
-  useEffect(() => {
-    if (users.length > 0) {
-      setValue('userId', users[0].id, { shouldValidate: false });
-    }
-  }, [users, setValue]);
-
-  const { mutate, isPending } = useMutation({
-    mutationFn: createTodo,
-    onSuccess: async () => {
-      reset({
-        title: '',
-        description: '',
-        userId: users[0]?.id ?? '',
-        categoryIds: [],
-      });
-      await refreshTodoQueries(queryClient);
-    },
-    onError: (err: unknown) => {
-      if (err instanceof ApiError) {
-        const msg = err.message.toLowerCase();
-        if (msg.includes('title')) {
-          setError('title', { message: err.message });
-          return;
-        }
-        if (msg.includes('user')) {
-          setError('userId', { message: err.message });
-          return;
-        }
-        if (msg.includes('categor')) {
-          setError('categoryIds', { message: err.message });
-          return;
-        }
-        setError('title', { message: err.message });
-      }
-    },
-  });
-
-  function toggleCategory(id: string) {
-    const next = selectedCategoryIds.includes(id)
-      ? selectedCategoryIds.filter((x) => x !== id)
-      : [...selectedCategoryIds, id];
-    setValue('categoryIds', next, { shouldValidate: true });
-  }
+    errors,
+    isSubmitting,
+    isPending,
+    selectedCategoryIds,
+    toggleCategory,
+    submit,
+  } = useCreateTodoForm();
 
   return (
     <form
-      onSubmit={handleSubmit((data) =>
-        mutate({
-          title: data.title,
-          description: data.description?.trim() || undefined,
-          userId: data.userId,
-          categoryIds: data.categoryIds?.length ? data.categoryIds : undefined,
-        }),
-      )}
+      onSubmit={submit}
       style={{
         marginBottom: 24,
         padding: 12,

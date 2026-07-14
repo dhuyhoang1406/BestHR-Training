@@ -1,8 +1,6 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { bulkDeleteTodos } from '@/lib/api';
-import { refreshTodoQueries } from '@/lib/query';
+import { useBulkActionBar } from '@/hooks/use-bulk-action-bar';
 
 interface BulkActionBarProps {
   selectedIds: string[];
@@ -13,21 +11,10 @@ export function BulkActionBar({
   selectedIds,
   onClearSelection,
 }: BulkActionBarProps) {
-  const queryClient = useQueryClient();
+  const { isVisible, selectedCount, isPending, deleteSelected } =
+    useBulkActionBar(selectedIds, onClearSelection);
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: bulkDeleteTodos,
-    onSuccess: async () => {
-      onClearSelection();
-      await refreshTodoQueries(queryClient);
-    },
-    onError: (error) => {
-      console.error(error);
-      alert('Could not delete tasks. Please try again.');
-    },
-  });
-
-  if (selectedIds.length === 0) return null;
+  if (!isVisible) return null;
 
   return (
     <div
@@ -45,10 +32,10 @@ export function BulkActionBar({
         zIndex: 50,
       }}
     >
-      <span>{selectedIds.length} selected</span>
+      <span>{selectedCount} selected</span>
       <button
         type="button"
-        onClick={() => mutate(selectedIds)}
+        onClick={deleteSelected}
         disabled={isPending}
         style={{ background: '#c00', color: '#fff', padding: '8px 12px' }}
       >

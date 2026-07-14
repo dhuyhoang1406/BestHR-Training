@@ -1,15 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
-import { fetchUsers } from '@/lib/api';
+import { useUsers } from '@/hooks/use-users';
 
 export function AppNav() {
-  const { data: users = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: fetchUsers,
-  });
-
+  const { data: users = [] } = useUsers();
   const firstUserId = users[0]?.id;
 
   return (

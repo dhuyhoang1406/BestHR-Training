@@ -44,3 +44,8 @@ export interface CreateTodoPayload {
   userId: string;
   categoryIds?: string[];
 }
+
+export interface CreateCategoryPayload {
+  name: string;
+  color: string;
+}

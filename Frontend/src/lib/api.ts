@@ -1,14 +1,14 @@
 import axios, { isAxiosError } from 'axios';
+import { API_ROUTES } from './api.route';
 import type {
   Category,
+  CreateCategoryPayload,
   CreateTodoPayload,
   PaginatedTodosResponse,
   Todo,
   TodoStatus,
   User,
 } from './types';
-
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export class ApiError extends Error {
   status: number;
@@ -32,7 +32,6 @@ export class ApiError extends Error {
 }
 
 const api = axios.create({
-  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -60,28 +59,39 @@ export async function fetchTodos(
   page: number,
   limit: number,
   isArchived = false,
+  search?: string,
 ): Promise<PaginatedTodosResponse> {
+  const trimmedSearch = search?.trim();
   return request(() =>
-    api.get<PaginatedTodosResponse>('/todos', {
+    api.get<PaginatedTodosResponse>(API_ROUTES.TODOS, {
       params: {
         limit,
         page,
         ...(isArchived ? { isArchived: true } : {}),
+        ...(trimmedSearch ? { search: trimmedSearch } : {}),
       },
     }),
   );
 }
 
 export async function fetchTodoById(id: string): Promise<Todo> {
-  return request(() => api.get<Todo>(`/todos/${id}`));
+  return request(() => api.get<Todo>(API_ROUTES.TODO_BY_ID(id)));
 }
 
 export async function fetchUsers(): Promise<User[]> {
-  return request(() => api.get<User[]>('/users'));
+  return request(() => api.get<User[]>(API_ROUTES.USERS));
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-  return request(() => api.get<Category[]>('/categories'));
+  return request(() => api.get<Category[]>(API_ROUTES.CATEGORIES));
+}
+
+export async function createCategory(
+  payload: CreateCategoryPayload,
+): Promise<Category> {
+  return request(() =>
+    api.post<Category>(API_ROUTES.CATEGORIES, payload),
+  );
 }
 
 export async function fetchUserTodos(
@@ -89,14 +99,14 @@ export async function fetchUserTodos(
   status?: TodoStatus,
 ): Promise<Todo[]> {
   return request(() =>
-    api.get<Todo[]>(`/users/${userId}/todos`, {
+    api.get<Todo[]>(API_ROUTES.USER_TODOS(userId), {
       params: status ? { status } : undefined,
     }),
   );
 }
 
 export async function createTodo(payload: CreateTodoPayload): Promise<Todo> {
-  return request(() => api.post<Todo>('/todos', payload));
+  return request(() => api.post<Todo>(API_ROUTES.TODOS, payload));
 }
 
 export async function updateTodoStatus(
@@ -104,18 +114,20 @@ export async function updateTodoStatus(
   status: TodoStatus,
 ): Promise<Todo> {
   return request(() =>
-    api.patch<Todo>(`/todos/${id}/status`, { status }),
+    api.patch<Todo>(API_ROUTES.TODO_STATUS(id), { status }),
   );
 }
 
 export async function archiveTodo(id: string): Promise<Todo> {
-  return request(() => api.patch<Todo>(`/todos/${id}/archive`));
+  return request(() => api.patch<Todo>(API_ROUTES.TODO_ARCHIVE(id)));
 }
 
 export async function restoreTodo(id: string): Promise<Todo> {
-  return request(() => api.patch<Todo>(`/todos/${id}/restore`));
+  return request(() => api.patch<Todo>(API_ROUTES.TODO_RESTORE(id)));
 }
 
 export async function bulkDeleteTodos(ids: string[]): Promise<void> {
-  return request(() => api.post<void>('/todos/bulk-delete', { ids }));
+  return request(() =>
+    api.post<void>(API_ROUTES.TODOS_BULK_DELETE, { ids }),
+  );
 }

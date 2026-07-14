@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 import { Category } from '../entities/category.entity';    
@@ -33,6 +33,14 @@ export class TodosService {
       qb.where('todo.deletedAt IS NOT NULL');
     } else {
       qb.where('todo.deletedAt IS NULL');
+    }
+
+    const search = query.search?.trim();
+    if (search) {
+      qb.andWhere(
+        '(todo.title ILIKE :search OR todo.description ILIKE :search)',
+        { search: `%${search}%` },
+      );
     }
 
     const [data, total] = await qb.getManyAndCount();
@@ -92,6 +100,11 @@ export class TodosService {
 
   async changeStatus(id: string, status: TodoStatus) {
     const todo = await this.findOneOrFail(id, true);
+    if (todo.deletedAt) {
+      throw new BadRequestException(
+        'Cannot change status of an archived todo. Restore it first.',
+      );
+    }
     todo.status = status;
     return this.todoRepository.save(todo);
   }

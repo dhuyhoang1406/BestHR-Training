@@ -1,4 +1,5 @@
 import { AppNav } from '@/components/app-nav';
+import { CreateCategoryForm } from '@/components/create-category-form';
 import { CreateTodoForm } from '@/components/create-todo-form';
 import { TodoFeed } from '@/components/todo-feed';
 
@@ -14,7 +15,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     <main style={{ maxWidth: 800, margin: '0 auto', padding: 24 }}>
       <AppNav />
       <h1>{isArchived ? 'Archive' : 'Todos'}</h1>
-      {!isArchived && <CreateTodoForm />}
+      {!isArchived && (
+        <>
+          <CreateTodoForm />
+          <CreateCategoryForm />
+        </>
+      )}
       <TodoFeed
         key={isArchived ? 'archived' : 'active'}
         isArchived={isArchived}

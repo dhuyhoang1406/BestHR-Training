@@ -1,5 +1,13 @@
 import { Transform, Type } from 'class-transformer';
-import { IsBoolean, IsInt, IsOptional, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 function toBool(value: unknown): boolean {
   if (value === true || value === 'true' || value === '1') return true;
@@ -28,4 +36,9 @@ export class GetTodosQueryDto {
   @Transform(({ obj }) => toBool(obj.isArchived))
   @IsBoolean()
   isArchived: boolean = false;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  search?: string;
 }

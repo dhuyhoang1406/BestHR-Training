@@ -1,62 +1,31 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  archiveTodo,
-  fetchTodoById,
-  restoreTodo,
-  updateTodoStatus,
-} from '@/lib/api';
-import { refreshTodoQueries } from '@/lib/query';
+import { TODO_STATUSES } from '@/hooks/constants';
+import { useTodoDetail } from '@/hooks/use-todo-detail';
 import type { TodoStatus } from '@/lib/types';
 import { CategoryBadges } from './category-badges';
 
-const STATUSES: TodoStatus[] = ['PENDING', 'IN_PROGRESS', 'DONE'];
-
 export function DetailToDo() {
-  const params = useParams<{ id: string }>();
-  const id = params.id;
-  const router = useRouter();
-  const queryClient = useQueryClient();
-
-  const { data: todo, isLoading, isError, error } = useQuery({
-    queryKey: ['todo', id],
-    queryFn: () => fetchTodoById(id),
-    enabled: Boolean(id),
-  });
-
-  const statusMutation = useMutation({
-    mutationFn: (status: TodoStatus) => updateTodoStatus(id, status),
-    onSuccess: async () => {
-      await refreshTodoQueries(queryClient);
-    },
-  });
-
-  const archiveMutation = useMutation({
-    mutationFn: () => archiveTodo(id),
-    onSuccess: async () => {
-      await refreshTodoQueries(queryClient);
-      router.push('/?isArchived=true');
-    },
-  });
-
-  const restoreMutation = useMutation({
-    mutationFn: () => restoreTodo(id),
-    onSuccess: async () => {
-      await refreshTodoQueries(queryClient);
-      router.push('/');
-    },
-  });
+  const {
+    todo,
+    isArchived,
+    isLoading,
+    isError,
+    error,
+    isStatusPending,
+    isArchivePending,
+    isRestorePending,
+    changeStatus,
+    archive,
+    restore,
+  } = useTodoDetail();
 
   if (isLoading) return <p>Loading...</p>;
   if (isError) {
     return <p style={{ color: 'red' }}>{(error as Error).message}</p>;
   }
   if (!todo) return <p>Todo not found.</p>;
-
-  const isArchived = Boolean(todo.deletedAt);
 
   return (
     <div>
@@ -99,12 +68,15 @@ export function DetailToDo() {
         <dd style={{ margin: '0 0 12px' }}>
           <select
             value={todo.status}
-            disabled={statusMutation.isPending}
-            onChange={(e) =>
-              statusMutation.mutate(e.target.value as TodoStatus)
+            disabled={isArchived || isStatusPending}
+            onChange={(e) => changeStatus(e.target.value as TodoStatus)}
+            title={
+              isArchived
+                ? 'Restore the todo before changing status'
+                : undefined
             }
           >
-            {STATUSES.map((s) => (
+            {TODO_STATUSES.map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>
@@ -141,18 +113,18 @@ export function DetailToDo() {
       {isArchived ? (
         <button
           type="button"
-          disabled={restoreMutation.isPending}
-          onClick={() => restoreMutation.mutate()}
+          disabled={isRestorePending}
+          onClick={restore}
         >
-          {restoreMutation.isPending ? 'Restoring...' : 'Restore'}
+          {isRestorePending ? 'Restoring...' : 'Restore'}
         </button>
       ) : (
         <button
           type="button"
-          disabled={archiveMutation.isPending}
-          onClick={() => archiveMutation.mutate()}
+          disabled={isArchivePending}
+          onClick={archive}
         >
-          {archiveMutation.isPending ? 'Archiving...' : 'Archive'}
+          {isArchivePending ? 'Archiving...' : 'Archive'}
         </button>
       )}
     </div>
